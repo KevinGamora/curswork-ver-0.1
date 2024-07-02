@@ -3,21 +3,19 @@ import os
 
 from config import LOGS_DIR
 
+class Logger:
 
-# noinspection NonAsciiCharacters
-class Логгер:
+    def __init__(self, logger_name: str, save_directory: str = LOGS_DIR, mode: str = "w", level: int = 10):
 
-    def __init__(self, имя_логгера: str, каталог_сохранения: str = LOGS_DIR, режим: str = "w", уровень: int = 10):
-
-        self.логгер = logging.getLogger(имя_логгера)
-        self.логгер.setLevel(уровень)
-        self.обработчик = logging.FileHandler(
-            str(os.path.join(каталог_сохранения, имя_логгера + ".log")), mode=режим, encoding="utf8"
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(level)
+        self.handler = logging.FileHandler(
+            str(os.path.join(save_directory, logger_name + ".log")), mode=mode, encoding="utf8"
         )
-        self.форматтер = logging.Formatter("%(name)s - %(funcName)s: %(message)s")
+        self.formatter = logging.Formatter("%(name)s - %(funcName)s: %(message)s")
 
-        self.обработчик.setFormatter(self.форматтер)
-        self.логгер.addHandler(self.обработчик)
+        self.handler.setFormatter(self.formatter)
+        self.logger.addHandler(self.handler)
 
-    def на_дежурстве(self) -> logging.Logger:
-        return self.логгер
+    def on_duty(self) -> logging.Logger:
+        return self.logger

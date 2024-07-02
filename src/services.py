@@ -1,57 +1,53 @@
 import re
 
 from config import OP_DATA_DIR
-from src.my_logger import Логгер
+from src.my_logger import Logger
 from src.utils import read_file_data
 
-логгер = Логгер("services").на_дежурстве()
+logger = Logger("services").on_duty()
 
-
-# noinspection NonAsciiCharacters
-def простой_поиск(поле_поиска: str, путь_файла: str = OP_DATA_DIR) -> list[dict]:
+def simple_search(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:
     """
     Функция для поиска операций по полю поиска в описании операции или в категории.
-    :param поле_поиска: Строка для поиска.
-    :param путь_файла: Путь до файла
+    :param search_field: Строка для поиска.
+    :param file_path: Путь до файла
     :return: Список подходящих по поиску операций.
     """
 
-    поле_поиска = поле_поиска.lower()
-    все_данные_оп = read_file_data(путь_файла)
+    search_field = search_field.lower()
+    all_data_op = read_file_data(file_path)
 
     tmp = []
-    for оп in все_данные_оп:
-        категория_оп = оп["Категория"] or " "
-        описание_оп = оп["Описание"] or " "
+    for op in all_data_op:
+        category_op = op["Категория"] or " "
+        description_op = op["Описание"] or " "
 
-        if поле_поиска in категория_оп.lower() or поле_поиска in описание_оп.lower():
-            tmp.append(оп)
+        if search_field in category_op.lower() or search_field in description_op.lower():
+            tmp.append(op)
 
-    логгер.debug(f"В поиск передано: {поле_поиска}. Найдено совпадений: {len(tmp)}")
+    logger.debug(f"В поиск передано: {search_field}. Найдено совпадений: {len(tmp)}")
 
     return tmp
 
-
-# noinspection NonAsciiCharacters
-def поиск_по_лицам(путь_файла: str = OP_DATA_DIR) -> list[dict]:
+def search_by_persons(file_path: str = OP_DATA_DIR) -> list[dict]:
     """
     Функция возвращает список операций физическим лицам
-    :param путь_файла: путь до excel файла
+    :param file_path: путь до excel файла
     :return: Список операций
     """
 
     tmp = []
-    данные_оп = read_file_data(путь_файла)
+    data_op = read_file_data(file_path)
 
-    for оп in данные_оп:
-        if оп["Категория"] != "Переводы":
+    for op in data_op:
+        if op["Категория"] != "Переводы":
             continue
 
-        регулярное_выражение = r"\w* [\w]{1}\."
-        результат = re.findall(регулярное_выражение, оп["Описание"])
-        if результат:
-            tmp.append(оп)
+        regex = r"\w* [\w]{1}\."
+        result = re.findall(regex, op["Описание"])
+        if result:
+            tmp.append(op)
 
-    логгер.debug(f"Найдено совпадений: {len(tmp)}")
+    logger.debug(f"Найдено совпадений: {len(tmp)}")
 
     return tmp

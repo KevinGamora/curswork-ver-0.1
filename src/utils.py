@@ -1,21 +1,19 @@
 import numpy as np
 import pandas as pd
 
-
-def чтение_данных_из_файла(путь_файла: str) -> list[dict]:
+def read_data_from_file(file_path: str) -> list[dict]:
     """
     Функция читает данные из файла Excel и возвращает их в виде списка словарей.
-    :param путь_файла: Путь к файлу с данными
+    :param file_path: Путь к файлу с данными
     :return: Список словарей, представляющих данные
     """
 
-    данные = pd.read_excel(путь_файла).replace({np.nan: None})
-    данные_как_словарь = данные.to_dict("records")
+    data = pd.read_excel(file_path).replace({np.nan: None})
+    data_as_dict = data.to_dict("records")
 
-    return данные_как_словарь
+    return data_as_dict
 
-
-def получить_json_из_dataframe(df: pd.DataFrame) -> list[dict]:
+def get_json_from_dataframe(df: pd.DataFrame) -> list[dict]:
     """
     Функция конвертирует DataFrame в список словарей.
     :param df: DataFrame для конвертации
