@@ -17,22 +17,22 @@ dotenv.load_dotenv()
 logger = Logger("view").on_duty()
 
 
-def event_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
+def post_events_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M") -> dict:
     """
     Главная функция.
-    Собирает данные (траты, поступления, стоимости валют и акций) из других функций
-    и возвращает готовый JSON ответ.
+    Собирает данные(траты, поступления, стоимости валют и акций) из других функций
+    и возвращает готовый JSON ответ
 
     :param date: Формат даты День.Месяц.Год
-    :param optional_flag: Отображение операций за месяц/неделю/год/всё время (до введенной даты)
-    :return: Готовый JSON ответ (словарь)
+    :param optional_flag: Отображение операций за месяц/неделю/год/всё время(до введенной даты)
+    :return: готовый JSON ответ (словарь)
     """
 
-    operation_date_data = operations_by_date_range(date, optional_flag)
-    expenses, income = expenses_income(operation_date_data)
+    f_by_date_operations = get_operations_by_date_range(date, optional_flag)
+    expences, income = get_expences_income(f_by_date_operations)
 
-    currency_rates, stock_prices = get_currency_stocks(USER_SETTINGS)
-    result = {"расходы": expenses, "доходы": income, "курсы_валют": currency_rates, "цены_акций": stock_prices}
+    currency_rates, stocks_prices = get_currency_stocks(USER_SETTINGS)
+    result = {"expences": expences, "income": income, "currency_rates": currency_rates, "stock_prices": stocks_prices}
 
     logger.info("Возвращенные данные указаны ниже")
     logger.info(result)
@@ -40,27 +40,27 @@ def event_response(date: str, optional_flag: Literal["M", "W", "Y", "ALL"] = "M"
     return result
 
 
-def operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
+def get_operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
     """
     Функция для фильтрации данных об операциях по дате.
     :param date: Формат даты День.Месяц.Год
-    :param optional_flag: Отображение операций за месяц/неделю/год/всё время (до введенной даты)
+    :param optional_flag: Отображение операций за месяц/неделю/год/всё время(до введенной даты)
     :return: Список словарей с данными об операциях
     """
 
-    # Задаем последнюю дату операций
+    # Задаём последнюю дату операций
     last_date = datetime.datetime.strptime(date, "%d.%m.%Y")
 
-    # Задаем начальную дату операций. По умолчанию с начала месяца
+    # Задаём стартовую дату операций. По умолчанию с начала месяца
     start_date = last_date.replace(day=1)
 
     if optional_flag == "W":
-        # Берем данные с начала недели по день недели, соответствующий указанной дате
+        # Берем данные с начала недели по день недели соответствующий указаной дате
         days_between = last_date.day - last_date.weekday()
         start_date = last_date.replace(day=days_between)
 
     elif optional_flag == "Y":
-        # Берем данные с начала года по день, соответствующий указанной дате
+        # Берем данные с начала года по день соответствующий указаной дате
         start_date = last_date.replace(day=1, month=1)
 
     elif optional_flag == "ALL":
@@ -68,153 +68,153 @@ def operations_by_date_range(date: str, optional_flag: str = "M") -> list[dict]:
         start_date = last_date.replace(day=1, month=1, year=1)
 
     df = get_dataframe_from_file(OP_DATA_DIR)  # Считываем DataFrame из файла
-    operation_data = get_json_from_dataframe(df)  # Считываем данные из DataFrame
-    tmp = []  # Контейнер для операций, попадающих под требование
+    op_data = get_json_from_dataframe(df)  # Считываем данные из DataFrame
+    tmp = []  # Контейнер для операций попадающих под требование
 
-    # Отсекаем операции, которые не были выполнены или не покинули счет
-    for operation in operation_data:
-        if operation["Статус"] != "OK":
+    # Отсекаем операции которые не были совершены и деньги не покинули счёт
+    for op in op_data:
+        if op["Статус"] != "OK":
             continue
 
-        operation_date = datetime.datetime.strptime(operation["Дата операции"], "%d.%m.%Y %H:%M:%S")
+        op_date = datetime.datetime.strptime(op["Дата операции"], "%d.%m.%Y %H:%M:%S")
 
         # Если дата операции подходит под требование - добавляем в контейнер
-        if start_date < operation_date < last_date.replace(day=last_date.day + 1):
-            tmp.append(operation)
+        if start_date < op_date < last_date.replace(day=last_date.day + 1):
+            tmp.append(op)
 
     return tmp
 
 
-def get_expense_categories(expense_categories: dict) -> dict:
+def get_expences_categories(expences_categories: dict) -> dict:
     """
-    Функция принимает на вход словарь с расходами по всем категориям, сортирует их по убыванию,
-    оставляет только 7 категорий, где были наибольшие расходы. Все остальные категории
+    Функция принимает на вход словарь с тратами по всем категориям, сортирует по убыванию,
+    оставляет только 7 категорий, где были самые значительные траты. Все остальные траты
     помещает в категорию "Остальное".
 
-    :param expense_categories: Словарь с расходами. {Категория(str): Расход(int)}.
-    :return: Словарь. Данные о расходах, отсортированные по категориям.
+    :param expences_categories: Словарь с тратами. {Категория(str): Трата(int)}.
+    :return: Словарь. Данные о тратах отсортированные по категориям.
     """
 
     total_amount = 0
     transfers_and_cash = []
-    main_expenses = []
+    expences_main = []
 
-    for operation in dict(expense_categories).items():
+    for op in dict(expences_categories).items():
 
-        logger.info(operation)
+        logger.info(op)
 
-        operation_category, operation_amount = operation
-        total_amount += operation_amount
+        op_category, op_amount = op
+        total_amount += op_amount
 
-        if operation_category in ["Переводы", "Наличные"]:
-            transfers_and_cash.append({"категория": operation_category, "сумма": round(operation_amount)})
+        if op_category in ["Переводы", "Наличные"]:
+            transfers_and_cash.append({"category": op_category, "amount": round(op_amount)})
         else:
-            main_expenses.append({"категория": operation_category, "сумма": round(operation_amount)})
+            expences_main.append({"category": op_category, "amount": round(op_amount)})
 
     # Сортируем данные по убыванию
-    main_expenses.sort(key=lambda x: x["сумма"], reverse=True)
-    transfers_and_cash.sort(key=lambda x: x["сумма"], reverse=True)
+    expences_main.sort(key=lambda x: x["amount"], reverse=True)
+    transfers_and_cash.sort(key=lambda x: x["amount"], reverse=True)
 
-    # Если категорий расходов больше 7 - выбираем самые затратные. Остальным назначаем категорию "Остальное"
-    if len(main_expenses) > 7:
-        other_category_value = 0
-        while len(main_expenses) > 7:
-            popped_dict: dict = main_expenses.pop()
-            other_category_value += popped_dict["сумма"]
-        main_expenses.append({"категория": "Остальное", "сумма": other_category_value})
+    # Если категорий трат больше 7 - выделяем самые затратные. Остальным назначаем категорию "Остальное"
+    if len(expences_main) > 7:
+        other_cat_value = 0
+        while len(expences_main) > 7:
+            popped_dict: dict = expences_main.pop()
+            other_cat_value += popped_dict["amount"]
+        expences_main.append({"category": "Остальное", "amount": other_cat_value})
 
-    return {"общая_сумма": total_amount, "основные": main_expenses, "переводы_и_наличные": transfers_and_cash}
+    return {"total_amount": total_amount, "main": expences_main, "transfers_and_cash": transfers_and_cash}
 
 
 def get_income_categories(income_categories: dict) -> dict:
     """
-    Функция принимает на вход словарь с доходами по всем категориям и сортирует их по убыванию.
+    Функция принимает на вход словарь с поступлениями по всем категориям, сортирует по убыванию.
 
-    :param income_categories: Словарь с доходами. {Категория(str): Доход(int)}.
-    :return: Словарь. Данные о доходах, отсортированные по категориям.
+    :param income_categories: Словарь с поступлениями. {Категория(str): Поступление(int)}.
+    :return: Словарь. Данные о поступлениях отсортированные по категориям.
     """
 
     total_amount = 0
-    main_income = []
+    income_main = []
 
-    for operation in dict(income_categories).items():
-        logger.debug(operation)
-        operation_category, operation_amount = operation
-        total_amount += operation_amount
+    for op in dict(income_categories).items():
+        logger.debug(op)
+        op_category, op_amount = op
+        total_amount += op_amount
 
-        main_income.append({"категория": operation_category, "сумма": round(operation_amount)})
+        income_main.append({"category": op_category, "amount": round(op_amount)})
 
-    main_income.sort(key=lambda x: x["сумма"], reverse=True)
+    income_main.sort(key=lambda x: x["amount"], reverse=True)
 
-    return {"общая_сумма": total_amount, "основные": main_income}
+    return {"total_amount": total_amount, "main": income_main}
 
 
-def expenses_income(operations: list[dict]) -> tuple[dict, dict]:
+def get_expences_income(operations: list[dict]) -> tuple[dict, dict]:
     """
-    Функция принимает на вход список словарей с данными об операциях, отсортированных по дате.
+    Функция принимает на вход список словарей с данными о всех отсортированных по дате операциях.
 
     :param operations: Список словарей
-    :return: Словари (расходы, доходы)
+    :return: Словари (траты, поступления)
     """
 
     income_categories: defaultdict = defaultdict(int)
-    expense_categories: defaultdict = defaultdict(int)
+    expences_categories: defaultdict = defaultdict(int)
 
-    for operation in operations:
-        operation_amount = operation["Сумма платежа"]
-        operation_category = operation["Категория"]
+    for op in operations:
+        op_sum = op["Сумма платежа"]
+        op_category = op["Категория"]
 
-        if operation_amount < 0:
-            expense_categories[operation_category] += abs(operation_amount)
+        if op_sum < 0:
+            expences_categories[op_category] += abs(op_sum)
         else:
-            income_categories[operation_category] += abs(operation_amount)
+            income_categories[op_category] += abs(op_sum)
 
-    expenses = get_expense_categories(expense_categories)
-    income = get_income_categories(income_categories)
+    expences = get_expences_categories(expences_categories)
+    incomes = get_income_categories(income_categories)
 
-    return expenses, income
+    return expences, incomes
 
 
 def get_currency_stocks(file_path: str = USER_SETTINGS) -> tuple[list, list]:
     """
-    Функция для определения курса валюты и цены акций, указанных в настройках файла.
+    Функция для определения курса валюты и цены акций, указанных в file_path настройках.
     :param file_path: Путь до файла с настройками пользователя
     :return: Списки. (курсы валюты, акции)
     """
 
     with open(file_path, "r", encoding="utf8") as user_file:
         user_settings = json.load(user_file)
-        user_currencies = user_settings["валюты_пользователя"]
-        user_stocks = user_settings["акции_пользователя"]
+        user_currencies = user_settings["user_currencies"]
+        user_stocks = user_settings["user_stocks"]
 
     currency_list = []
-    stock_list = []
+    stocks_list = []
 
-    for currency in user_currencies:
-        currency_price = get_currency_price(currency)
-        currency_list.append({"валюта": currency, "курс": currency_price})
+    for cur in user_currencies:
+        cur_price = get_currency_price(cur)
+        currency_list.append({"currency": cur, "rate": cur_price})
 
     for stock in user_stocks:
         stock_price = get_stock_price(stock)
-        stock_list.append({"акция": stock, "цена": stock_price})
+        stocks_list.append({"stock": stock, "price": stock_price})
 
-    return currency_list, stock_list
+    return currency_list, stocks_list
 
 
-def get_currency_price(currency: str, to: str = "RUB") -> None | float:
+def get_currency_price(currency: str, into: str = "RUB") -> None | float:
     """
-    Функция для выполнения запроса API для получения цены валюты в рублевом эквиваленте.
-    Сервис API "Exchange Rates Data API" https://apilayer.com/marketplace/exchangerates_data-api
+    Функция для обращения по API запросу для получения цены валюты в рублёвом еквиваленте
+    API-сервис "Exchange Rates Data API" https://apilayer.com/marketplace/exchangerates_data-api
 
     :param currency: Основная валюта
-    :param to: В какую валюту необходимо конвертировать
-    :return: Если нет ответа - None, в противном случае float
+    :param into: В какую валюту необходимо конвертировать
+    :return: Если ответа нет - None, в успешном случае float
     """
 
     api_key = os.getenv("CUR_API")
     url = "https://api.apilayer.com/exchangerates_data/convert?"
 
-    params: dict[str, str | int] = {"to": to, "from": currency, "amount": 1}
+    params: dict[str, str | int] = {"to": into, "from": currency, "amount": 1}
 
     response = requests.get(url, params=params, headers={"apikey": api_key})
     if response.status_code != 200:
@@ -226,7 +226,7 @@ def get_currency_price(currency: str, to: str = "RUB") -> None | float:
 
 def get_stock_price(stock: str) -> None | float:
     """
-    Функция для получения цены акции в долларах по коду акции.
+    Функция получает цену акции в долларах по коду.
     Сервис: https://finnhub.io/docs/api/quote
 
     :param stock: Код акции
@@ -248,7 +248,7 @@ def get_stock_price(stock: str) -> None | float:
 
 def get_dataframe_from_file(file_path: str) -> pd.DataFrame:
     """
-    Функция принимает путь до файла и возвращает DataFrame, считывая его из файла.
+    Функция принимает путь до файла и возвращает Dataframe чтением файла
     :param file_path:
     :return:
     """

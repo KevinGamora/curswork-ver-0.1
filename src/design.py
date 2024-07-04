@@ -9,16 +9,16 @@ def cprint(
     end: str = "\n",
 ) -> None:
     """
-    Функция для стилизации сообщений, выводимых в консоль.
-    :param text: Выводимый текст
+    Функция для стилизаций сообщений выводимых в консоль
+    :param text: Передаваемый текст
     :param text_color: Цвет текста
-    :param bg_color: Цвет фона
+    :param bg_color: Цвет заднего фона
     :param text_style: Стиль текста
     :param end: Символ в конце сообщения
     :return: None
     """
 
-    # Словарь цветов текста, фона и стилей
+    # Словарь цветов текста, заднего фона, стиля текста
     colors = {
         "text": {
             "default": "",
@@ -45,8 +45,8 @@ def cprint(
         "style": {"default": "", "bold": "\033[1m", "curve": "\033[3m", "underline": "\033[4m"},
     }
 
-    # Вывод сообщения с заданными параметрами
+    # Выводим сообщение с заданными параметрами
     print(colors["text"][text_color] + colors["bg"][bg_color] + colors["style"][text_style] + text, end=end)
 
-    # Сброс цветов и стилей
+    # Сбрасываем цвета и стили
     print("\033[0m", end="")
