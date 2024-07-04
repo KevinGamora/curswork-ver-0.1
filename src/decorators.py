@@ -12,9 +12,9 @@ class ReportSaver:
     @staticmethod
     def to_excel(file_name: str = "result_{func}.xls") -> Callable:
         """
-        Декоратор для сохранения результатов в Excel файл.
-        :param file_name: Имя файла, в который будет сохранен результат. По умолчанию result_{func}.xls
-        :return: Обертка для функции
+        Декоратор для сохранения результатов в файл.
+        :param file_name: Имя файла в которую будет сохранён результат. По умолчанию result_ИмяФункции.xls
+        :return: Результат работы функции
         """
 
         def wrapper(func: Callable) -> Callable:

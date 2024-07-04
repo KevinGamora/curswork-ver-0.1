@@ -6,7 +6,8 @@ from src.utils import read_file_data
 
 logger = Logger("services").on_duty()
 
-def simple_search(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:
+
+def simple_searching(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]:
     """
     Функция для поиска операций по полю поиска в описании операции или в категории.
     :param search_field: Строка для поиска.
@@ -15,36 +16,37 @@ def simple_search(search_field: str, file_path: str = OP_DATA_DIR) -> list[dict]
     """
 
     search_field = search_field.lower()
-    all_data_op = read_file_data(file_path)
+    all_op_data = read_file_data(file_path)
 
     tmp = []
-    for op in all_data_op:
-        category_op = op["Категория"] or " "
-        description_op = op["Описание"] or " "
+    for op in all_op_data:
+        op_category = op["Категория"] or " "
+        op_descr = op["Описание"] or " "
 
-        if search_field in category_op.lower() or search_field in description_op.lower():
+        if search_field in op_category.lower() or search_field in op_descr.lower():
             tmp.append(op)
 
     logger.debug(f"В поиск передано: {search_field}. Найдено совпадений: {len(tmp)}")
 
     return tmp
 
-def search_by_persons(file_path: str = OP_DATA_DIR) -> list[dict]:
+
+def search_by_persons(filepath: str = OP_DATA_DIR) -> list[dict]:
     """
     Функция возвращает список операций физическим лицам
-    :param file_path: путь до excel файла
-    :return: Список операций
+    :param filepath: путь до excel файла
+    :return:
     """
 
     tmp = []
-    data_op = read_file_data(file_path)
+    op_data = read_file_data(filepath)
 
-    for op in data_op:
+    for op in op_data:
         if op["Категория"] != "Переводы":
             continue
 
-        regex = r"\w* [\w]{1}\."
-        result = re.findall(regex, op["Описание"])
+        regex_pattern = r"\w* [\w]{1}\."
+        result = re.findall(regex_pattern, op["Описание"])
         if result:
             tmp.append(op)
 

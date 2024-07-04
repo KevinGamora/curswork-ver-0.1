@@ -1,11 +1,13 @@
 import pytest
+
 from src.services import search_by_persons, simple_searching
+
 
 @pytest.mark.parametrize(
     "search_field, expected",
     [
         (
-            "KOTLETA",
+            "#FARШ",
             [
                 {
                     "Дата операции": "09.06.2021 22:05:03",
@@ -19,7 +21,7 @@ from src.services import search_by_persons, simple_searching
                     "Кэшбэк": None,
                     "Категория": "Фастфуд",
                     "MCC": 5814.0,
-                    "Описание": "KOTLETA",
+                    "Описание": "#FARШ",
                     "Бонусы (включая кэшбэк)": 7,
                     "Округление на инвесткопилку": 0,
                     "Сумма операции с округлением": 390.0,
@@ -36,7 +38,7 @@ from src.services import search_by_persons, simple_searching
                     "Кэшбэк": None,
                     "Категория": "Фастфуд",
                     "MCC": 5814.0,
-                    "Описание": "KOTLETA",
+                    "Описание": "#FARШ",
                     "Бонусы (включая кэшбэк)": 7,
                     "Округление на инвесткопилку": 0,
                     "Сумма операции с округлением": 350.0,
@@ -44,7 +46,7 @@ from src.services import search_by_persons, simple_searching
             ],
         ),
         (
-            "Sharma",
+            "Evo_Lyzhnyj",
             [
                 {
                     "Дата операции": "27.12.2021 12:01:09",
@@ -58,7 +60,7 @@ from src.services import search_by_persons, simple_searching
                     "Кэшбэк": None,
                     "Категория": "Супермаркеты",
                     "MCC": 5411.0,
-                    "Описание": "Sharma",
+                    "Описание": "Evo_Lyzhnyj",
                     "Бонусы (включая кэшбэк)": 0,
                     "Округление на инвесткопилку": 0,
                     "Сумма операции с округлением": 40.0,
@@ -68,26 +70,12 @@ from src.services import search_by_persons, simple_searching
     ],
 )
 def test_simple_searching_paramz(search_field, expected):
-    """
-    Тест функции simple_searching с использованием параметризации.
-    Проверяет корректность поиска по заданному полю и ожидаемые результаты.
-    """
     assert simple_searching(search_field) == expected
 
 
 def test_simple_searching(cat_search_results):
-    """
-    Тест функции simple_searching без параметризации.
-    Проверяет корректность поиска по заданному полю (в данном случае "Райффайзенбанк")
-    и сравнивает с ожидаемыми результатами из фикстуры cat_search_results.
-    """
     assert simple_searching("Райффайзенбанк") == cat_search_results
 
 
 def test_search_by_persons(persons_search_result):
-    """
-    Тест функции search_by_persons.
-    Проверяет корректность возвращаемых результатов поиска операций физическим лицам
-    и сравнивает с ожидаемыми результатами из фикстуры persons_search_result.
-    """
     assert search_by_persons()[:5] == persons_search_result
